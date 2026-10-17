@@ -55,6 +55,9 @@ export const ENDPOINTS: Endpoint[] = [
 			"scaleway/glm-5.3": { contextWindow: 256_000, maxTokens: 16_384, vision: false, thinking: "always" },
 			"scaleway/deepseek-v4.1-flash": { contextWindow: 256_000, maxTokens: 32_768, vision: true, thinking: "always" },
 			"scaleway/deepseek-v4-flash-0731": { contextWindow: 256_000, maxTokens: 32_768, vision: false, thinking: "always" },
+			// The same model as qwen-3.8-27b on IA4Dev, but Scaleway does not pass chat_template_kwargs
+			// to its template: it always reasons and no effort level changes how much.
+			"scaleway/qwen3.8-27b": { contextWindow: 262_144, maxTokens: 32_768, vision: true, thinking: "always" },
 			"qwen-3.6-35b-instruct": { contextWindow: 262_144, vision: true, thinking: "toggle" },
 			"gemma-4-31b": { contextWindow: 131_072, vision: true, thinking: "toggle" },
 			"llama-3.1-8b": { hidden: true },
