@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/AI-for-dev/providers/compare/v0.2.0...v0.3.0) (2026-10-17)
+
+
+### Features
+
+* export the providers as a models.json ([#5](https://github.com/AI-for-dev/providers/issues/5)) ([ea3f067](https://github.com/AI-for-dev/providers/commit/ea3f067a3bbe8a8fcea5ff334fdcc45a98e36ff0))
+
 ## [0.2.0](https://github.com/AI-for-dev/providers/compare/v0.1.0...v0.2.0) (2026-10-17)
 
 
