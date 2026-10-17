@@ -6,6 +6,7 @@
 	"bump-minor-pre-major": true,
 	"initial-version": "0.1.0",
 	"changelog-path": "CHANGELOG.md",
+	"bootstrap-sha": "66d8393a1f975ad5312150f58511ec8f0c9b4d1c",
 	"changelog-sections": [
 		{
 			"type": "feat",
