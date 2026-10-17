@@ -1,6 +1,6 @@
 {
   "name": "@ai-for-dev/providers",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pi providers for the AI4Dev course models (ILAAS and IA4Dev)",
   "keywords": [
     "pi",
