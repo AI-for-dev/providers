@@ -270,6 +270,7 @@ describe("reasoning sent to the server", () => {
 	it("sends nothing to models that always reason or never do", async () => {
 		const nothing = { chat_template_kwargs: undefined, reasoning_effort: undefined };
 		assert.deepEqual(await reasoningSent("ia4dev-ilaas", "scaleway/glm-5.2", "high"), nothing);
+		assert.deepEqual(await reasoningSent("ia4dev-ilaas", "scaleway/qwen3.8-27b", "high"), nothing);
 		assert.deepEqual(await reasoningSent("ia4dev-ilaas", "mistral-small-4-119b", "off"), nothing);
 	});
 });

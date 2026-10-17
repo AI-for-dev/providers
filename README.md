@@ -36,7 +36,7 @@ Vous pouvez aussi fournir la clé par variable d'environnement : `ILAAS_API_KEY`
 - permanent (`always`) : Pi ne propose que `high` ;
 - absent (`none`) : Pi n'envoie aucun paramètre de raisonnement.
 
-Seuls `qwen-3.8-27b` et `ARES/DeepSeek-V4.1-Flash` lisent un niveau d'effort dans leur modèle de chat. Ceux de Qwen 3.6 et de Gemma 4 ne connaissent que `enable_thinking`.
+Seuls `qwen-3.8-27b` et `ARES/DeepSeek-V4.1-Flash` sur IA4Dev lisent un niveau d'effort dans leur modèle de chat. Ceux de Qwen 3.6 et de Gemma 4 ne connaissent que `enable_thinking`. Sur ILAAS, `scaleway/qwen3.8-27b` est le même modèle que `qwen-3.8-27b`, mais Scaleway ne transmet pas `chat_template_kwargs` : il réfléchit toujours, quel que soit le niveau demandé.
 
 Un modèle marqué `hidden: true` n'apparaît pas, même si le serveur le liste. Un modèle qui n'est pas dans la table reste utilisable. Il prend la taille de contexte donnée par le serveur (128 000 tokens à défaut), 32 768 tokens de sortie, sans images ni raisonnement.
 
