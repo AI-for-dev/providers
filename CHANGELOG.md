@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/AI-for-dev/providers/compare/v0.3.0...v0.4.0) (2026-10-17)
+
+
+### Features
+
+* add Qwen 3.8 on ILAAS ([#7](https://github.com/AI-for-dev/providers/issues/7)) ([8cffb66](https://github.com/AI-for-dev/providers/commit/8cffb666cccbe28a5166d46aace0e1f27d060a01))
+
 ## [0.3.0](https://github.com/AI-for-dev/providers/compare/v0.2.0...v0.3.0) (2026-10-17)
 
 
