@@ -1,15 +1,38 @@
 {
-  "name": "pi-ai4dev-provider",
+  "name": "@ai-for-dev/providers",
   "version": "0.1.0",
-  "description": "Providers Pi pour la formation AI4Dev : ILAAS et IA4Dev",
-  "keywords": ["pi-package", "pi-extension", "pi-provider", "llm"],
+  "description": "Pi providers for the AI4Dev course models (ILAAS and IA4Dev)",
+  "keywords": [
+    "pi",
+    "pi-package",
+    "provider",
+    "llm"
+  ],
+  "license": "MIT",
+  "author": "AI-for-dev team",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AI-for-dev/providers.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AI-for-dev/providers/issues"
+  },
   "type": "module",
-  "files": ["extensions", "README.md"],
+  "files": [
+    "extensions",
+    "README.md"
+  ],
   "pi": {
-    "extensions": ["./extensions/index.ts"]
+    "extensions": [
+      "./extensions/index.ts"
+    ]
   },
   "scripts": {
     "check": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",

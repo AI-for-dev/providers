@@ -1,4 +1,4 @@
-# pi-ai4dev-provider
+# @ai-for-dev/providers
 
 Providers [Pi](https://pi.dev) pour la formation AI4Dev. Le paquet ajoute deux fournisseurs de modèles :
 
@@ -10,7 +10,7 @@ Providers [Pi](https://pi.dev) pour la formation AI4Dev. Le paquet ajoute deux f
 ## Installation
 
 ```bash
-pi install npm:pi-ai4dev-provider
+pi install npm:@ai-for-dev/providers
 ```
 
 ## Utilisation
