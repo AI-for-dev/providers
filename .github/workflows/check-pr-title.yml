@@ -1,0 +1,24 @@
+# Release Please reads the commit titles on `main` to decide what the next
+# version is and what the changelog says. Pull requests are squashed here, so
+# the pull request title becomes that commit title: this is the place to get it
+# right, and a title nobody can parse is a change no changelog will ever
+# mention.
+#
+# The vocabulary is the one `release-please-config.json` lists, `feat` and `fix`
+# being the two that move the version.
+name: lint pr
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

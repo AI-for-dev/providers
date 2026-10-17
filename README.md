@@ -41,3 +41,24 @@ Un modèle marqué `hidden: true` n'apparaît pas, même si le serveur le liste.
 
 - Un fournisseur déjà défini sous le même nom dans `~/.pi/agent/models.json` prend le dessus sur celui du paquet.
 - La liste des modèles est mise en cache. Après un changement d'URL, elle se met à jour au prochain rafraîchissement (`/model` ou `/login`).
+
+## Développement
+
+```bash
+npm ci
+npm run typecheck
+npm test
+```
+
+Les tests tournent hors ligne : un faux `pi` et un `fetch` simulé remplacent Pi et les serveurs.
+
+## Publication
+
+La publication reprend le fonctionnement de `@ai-for-dev/combo` :
+
+1. Lancer le workflow `release-please` à la main. Il ouvre une pull request avec le `CHANGELOG.md` et la nouvelle version, calculés à partir des titres de commits (conventional commits).
+2. Fusionner cette pull request, puis relancer `release-please`. Ce second passage crée le tag et la release GitHub.
+3. La release déclenche `publish`, qui vérifie le code et envoie le paquet sur npm en mode « staged ».
+4. Approuver la version depuis une machine qui peut répondre à la double authentification : `npm stage list`, puis `npm stage approve <id>`.
+
+Le dépôt a besoin du secret `RELEASE_PLEASE` (un token GitHub qui peut écrire le contenu et les pull requests), et npm doit déclarer ce dépôt et `publish.yml` comme éditeur de confiance (trusted publisher) pour `@ai-for-dev/providers`.

@@ -1,0 +1,31 @@
+# The two checks every change has to pass. The suite is offline by construction:
+# a fake pi and a stubbed fetch stand in for Pi and the model servers, so there
+# is no network to flake and no key to hold.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# A pull request supersedes its own earlier push, because only the last one is
+# being reviewed. A run on `main` is never superseded.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
