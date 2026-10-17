@@ -31,9 +31,12 @@ Vous pouvez aussi fournir la clé par variable d'environnement : `ILAAS_API_KEY`
 
 `extensions/index.ts` contient, pour chaque serveur, une table des modèles connus : taille du contexte, sortie maximale, lecture d'images et gestion du raisonnement. Ces valeurs ont été mesurées sur les serveurs. Le raisonnement peut être :
 
-- activable (`toggle`) : Pi propose `off` et `high`, et passe par `chat_template_kwargs.enable_thinking` ;
+- réglable par niveau : Pi propose `off`, `low`, `medium` et `high`, et envoie `enable_thinking` et `reasoning_effort` dans `chat_template_kwargs`. La table donne la valeur à envoyer pour chaque niveau, car chaque modèle a son vocabulaire (`xhigh` pour Qwen 3.8, `max` pour DeepSeek V4.1) ;
+- activable (`toggle`) : le modèle ne sait que réfléchir ou non. Pi propose `off` et `high`, et passe par `chat_template_kwargs.enable_thinking` ;
 - permanent (`always`) : Pi ne propose que `high` ;
 - absent (`none`) : Pi n'envoie aucun paramètre de raisonnement.
+
+Seuls `qwen-3.8-27b` et `ARES/DeepSeek-V4.1-Flash` lisent un niveau d'effort dans leur modèle de chat. Ceux de Qwen 3.6 et de Gemma 4 ne connaissent que `enable_thinking`.
 
 Un modèle marqué `hidden: true` n'apparaît pas, même si le serveur le liste. Un modèle qui n'est pas dans la table reste utilisable. Il prend la taille de contexte donnée par le serveur (128 000 tokens à défaut), 32 768 tokens de sortie, sans images ni raisonnement.
 

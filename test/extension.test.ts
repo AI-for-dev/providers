@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { type Credential, getSupportedThinkingLevels, hasApi, type Provider } from "@earendil-works/pi-ai/compat";
+import {
+	type Credential,
+	getSupportedThinkingLevels,
+	hasApi,
+	normalizeContext,
+	type Provider,
+	type ThinkingLevel,
+} from "@earendil-works/pi-ai/compat";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import extension from "../extensions/index.ts";
 
@@ -10,15 +17,23 @@ interface Request {
 }
 
 let requests: Request[] = [];
+// Bodies of the chat requests, as the model server receives them.
+let sent: Record<string, unknown>[] = [];
 let catalog: unknown = { data: [] };
 let status = 200;
 const realFetch = globalThis.fetch;
 
 beforeEach(() => {
 	requests = [];
+	sent = [];
 	catalog = { data: [] };
 	status = 200;
 	globalThis.fetch = async (input, init) => {
+		if (String(input).endsWith("/chat/completions")) {
+			sent.push(JSON.parse(String(init?.body)));
+			const reply = 'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n';
+			return new Response(reply, { headers: { "content-type": "text/event-stream" } });
+		}
 		requests.push({ url: String(input), authorization: new Headers(init?.headers).get("authorization") });
 		return new Response(JSON.stringify(catalog), { status });
 	};
@@ -66,6 +81,21 @@ function model(models: ReturnType<Provider["getModels"]>, id: string) {
 }
 
 const key: Credential = { type: "api_key", key: "sk-test" };
+
+/** Sends one prompt at the given thinking level and returns the reasoning fields of the request. */
+async function reasoningSent(providerId: string, modelId: string, level: ThinkingLevel | "off") {
+	catalog = { data: [{ id: modelId }] };
+	const target = provider(providerId);
+	const chat = model(await refresh(target, { credential: key }), modelId);
+	const context = normalizeContext({ messages: [{ role: "user", content: "hi", timestamp: 0 }] });
+	const stream = target.streamSimple(chat, context, { apiKey: "sk-test", reasoning: level === "off" ? undefined : level });
+	for await (const event of stream) {
+		if (event.type === "error") assert.fail(event.error.errorMessage);
+	}
+	const body = sent.at(-1);
+	assert.ok(body, "a chat request was sent");
+	return { chat_template_kwargs: body.chat_template_kwargs, reasoning_effort: body.reasoning_effort };
+}
 
 describe("registration", () => {
 	it("registers the ILAAS and IA4Dev providers on their servers", () => {
@@ -146,12 +176,12 @@ describe("model discovery", () => {
 
 describe("model tuning", () => {
 	it("lets a toggle model switch reasoning on and off through the chat template", async () => {
-		catalog = { data: [{ id: "qwen-3.8-27b", max_model_len: 262_144 }] };
-		const qwen = model(await refresh(provider("ia4dev-gricad"), { credential: key }), "qwen-3.8-27b");
-		assert.equal(qwen.reasoning, true);
-		assert.deepEqual(getSupportedThinkingLevels(qwen), ["off", "high"]);
-		assert.equal(qwen.compat?.thinkingFormat, "qwen-chat-template");
-		assert.deepEqual(qwen.input, ["text", "image"]);
+		catalog = { data: [{ id: "gemma-4-31b", max_model_len: 159_488 }] };
+		const gemma = model(await refresh(provider("ia4dev-gricad"), { credential: key }), "gemma-4-31b");
+		assert.equal(gemma.reasoning, true);
+		assert.deepEqual(getSupportedThinkingLevels(gemma), ["off", "high"]);
+		assert.equal(gemma.compat?.thinkingFormat, "qwen-chat-template");
+		assert.deepEqual(gemma.input, ["text", "image"]);
 	});
 
 	it("offers only high for a model that always reasons", async () => {
@@ -195,5 +225,51 @@ describe("model tuning", () => {
 		assert.deepEqual(limits("bare-model"), [128_000, 32_768, false, ["text"]]);
 		// The output limit never exceeds the context it has to fit in.
 		assert.deepEqual(limits("small-model"), [8_192, 8_192, false, ["text"]]);
+	});
+});
+
+describe("reasoning sent to the server", () => {
+	it("maps each level to Qwen 3.8's reasoning effort", async () => {
+		const sentAt = (level: ThinkingLevel | "off") => reasoningSent("ia4dev-gricad", "qwen-3.8-27b", level);
+		assert.deepEqual(await sentAt("off"), {
+			chat_template_kwargs: { enable_thinking: false, preserve_thinking: true },
+			reasoning_effort: undefined,
+		});
+		for (const [level, effort] of [["low", "low"], ["medium", "medium"], ["high", "xhigh"]] as const) {
+			assert.deepEqual(await sentAt(level), {
+				chat_template_kwargs: { enable_thinking: true, preserve_thinking: true, reasoning_effort: effort },
+				reasoning_effort: undefined,
+			});
+		}
+	});
+
+	it("maps each level to DeepSeek V4.1's reasoning effort", async () => {
+		for (const [level, effort] of [["low", "low"], ["medium", "high"], ["high", "max"]] as const) {
+			const { chat_template_kwargs } = await reasoningSent("ia4dev-gricad", "ARES/DeepSeek-V4.1-Flash", level);
+			assert.deepEqual(chat_template_kwargs, { enable_thinking: true, preserve_thinking: true, reasoning_effort: effort });
+		}
+	});
+
+	it("offers off, low, medium and high for an effort model", async () => {
+		catalog = { data: [{ id: "qwen-3.8-27b" }] };
+		const qwen = model(await refresh(provider("ia4dev-gricad"), { credential: key }), "qwen-3.8-27b");
+		assert.deepEqual(getSupportedThinkingLevels(qwen), ["off", "low", "medium", "high"]);
+	});
+
+	it("only switches a toggle model on and off", async () => {
+		assert.deepEqual(await reasoningSent("ia4dev-gricad", "gemma-4-31b", "high"), {
+			chat_template_kwargs: { enable_thinking: true, preserve_thinking: true },
+			reasoning_effort: undefined,
+		});
+		assert.deepEqual(await reasoningSent("ia4dev-gricad", "gemma-4-31b", "off"), {
+			chat_template_kwargs: { enable_thinking: false, preserve_thinking: true },
+			reasoning_effort: undefined,
+		});
+	});
+
+	it("sends nothing to models that always reason or never do", async () => {
+		const nothing = { chat_template_kwargs: undefined, reasoning_effort: undefined };
+		assert.deepEqual(await reasoningSent("ia4dev-ilaas", "scaleway/glm-5.2", "high"), nothing);
+		assert.deepEqual(await reasoningSent("ia4dev-ilaas", "mistral-small-4-119b", "off"), nothing);
 	});
 });

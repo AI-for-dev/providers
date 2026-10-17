@@ -13,11 +13,19 @@ type ChatModel = Model<"openai-completions">;
 
 /**
  * How a model handles reasoning, measured against the real servers:
- * - "toggle": off by default, switched on with chat_template_kwargs.enable_thinking (vLLM).
+ * - "toggle": chat_template_kwargs.enable_thinking switches reasoning on and off, nothing finer.
  * - "always": always reasons and ignores every switch.
  * - "none": no reasoning; any reasoning parameter makes the server fail.
+ * - Efforts: the chat template also reads a reasoning_effort, given here as the value
+ *   to send for each of Pi's low, medium and high levels.
  */
-type Thinking = "toggle" | "always" | "none";
+type Thinking = "toggle" | "always" | "none" | Efforts;
+
+interface Efforts {
+	low: string;
+	medium: string;
+	high: string;
+}
 
 interface ModelTuning {
 	contextWindow?: number;
@@ -61,8 +69,10 @@ const ENDPOINTS: Endpoint[] = [
 		baseUrl: "https://ia4dev-owui.univ-grenoble-alpes.fr/api",
 		envVar: "IA4DEV_API_KEY",
 		models: {
-			"qwen-3.8-27b": { vision: true, thinking: "toggle" },
-			"ARES/DeepSeek-V4.1-Flash": { vision: true, thinking: "toggle" },
+			// The chat template accepts low, medium and xhigh (its default).
+			"qwen-3.8-27b": { vision: true, thinking: { low: "low", medium: "medium", high: "xhigh" } },
+			// The deployed chat template accepts low, high (its default) and max, but not medium.
+			"ARES/DeepSeek-V4.1-Flash": { vision: true, thinking: { low: "low", medium: "high", high: "max" } },
 			"gemma-4-31b": { vision: true, thinking: "toggle" },
 		},
 	},
@@ -72,11 +82,34 @@ const DEFAULT_CONTEXT_WINDOW = 128_000;
 const DEFAULT_MAX_TOKENS = 32_768;
 const FETCH_TIMEOUT_MS = 10_000;
 
-// Effort levels mean nothing to these servers: reasoning is either on or off.
-const THINKING_LEVELS: Record<Exclude<Thinking, "none">, ChatModel["thinkingLevelMap"]> = {
-	toggle: { minimal: null, low: null, medium: null },
-	always: { off: null, minimal: null, low: null, medium: null },
-};
+type Reasoning = Pick<ChatModel, "reasoning" | "thinkingLevelMap"> & { compat: ChatModel["compat"] };
+
+// Pi's levels without a counterpart on the server are mapped to null, which hides them.
+function reasoningFor(thinking: Thinking): Reasoning {
+	if (thinking === "none") return { reasoning: false, compat: {} };
+	if (thinking === "always") {
+		return { reasoning: true, thinkingLevelMap: { off: null, minimal: null, low: null, medium: null }, compat: {} };
+	}
+	if (thinking === "toggle") {
+		return {
+			reasoning: true,
+			thinkingLevelMap: { minimal: null, low: null, medium: null },
+			compat: { thinkingFormat: "qwen-chat-template" },
+		};
+	}
+	return {
+		reasoning: true,
+		thinkingLevelMap: { minimal: null, ...thinking },
+		compat: {
+			thinkingFormat: "chat-template",
+			chatTemplateKwargs: {
+				enable_thinking: { $var: "thinking.enabled" },
+				preserve_thinking: true,
+				reasoning_effort: { $var: "thinking.effort", omitWhenOff: true },
+			},
+		},
+	};
+}
 
 interface RemoteModel {
 	id: string;
@@ -90,7 +123,7 @@ interface RemoteModel {
 
 function toModel(endpoint: Endpoint, remote: RemoteModel): ChatModel {
 	const tuning = endpoint.models[remote.id] ?? {};
-	const thinking = tuning.thinking ?? "none";
+	const reasoning = reasoningFor(tuning.thinking ?? "none");
 	const contextWindow =
 		tuning.contextWindow ?? remote.max_model_len ?? remote.max_input_tokens ?? DEFAULT_CONTEXT_WINDOW;
 	const maxTokens = tuning.maxTokens ?? remote.max_output_tokens ?? DEFAULT_MAX_TOKENS;
@@ -101,8 +134,8 @@ function toModel(endpoint: Endpoint, remote: RemoteModel): ChatModel {
 		provider: endpoint.id,
 		baseUrl: endpoint.baseUrl,
 		input: tuning.vision ? ["text", "image"] : ["text"],
-		reasoning: thinking !== "none",
-		thinkingLevelMap: thinking === "none" ? undefined : THINKING_LEVELS[thinking],
+		reasoning: reasoning.reasoning,
+		thinkingLevelMap: reasoning.thinkingLevelMap,
 		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 		contextWindow,
 		maxTokens: Math.min(maxTokens, contextWindow),
@@ -110,9 +143,10 @@ function toModel(endpoint: Endpoint, remote: RemoteModel): ChatModel {
 			// These gateways reject the newer OpenAI-only fields.
 			supportsDeveloperRole: false,
 			supportsStore: false,
-			// reasoning_effort is ignored by vLLM chat templates and crashes the Mistral models.
+			// A top-level reasoning_effort is ignored by vLLM chat templates and crashes the
+			// Mistral models; models that read an effort get it through the chat template.
 			supportsReasoningEffort: false,
-			...(thinking === "toggle" ? { thinkingFormat: "qwen-chat-template" as const } : {}),
+			...reasoning.compat,
 		},
 	};
 }
