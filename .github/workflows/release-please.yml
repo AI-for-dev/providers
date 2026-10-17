@@ -1,0 +1,34 @@
+# Release Please reads the conventional commits landed since the last tag and
+# opens a pull request that is the next release: `CHANGELOG.md`, the version in
+# `package.json` and in `.release-please-manifest.json`, nothing else.
+#
+# It starts by hand and never on a merge, so an ordinary pull request leaves no
+# release pull request behind it. A release therefore takes two runs. The first
+# opens the pull request; merging that pull request does nothing on its own, and
+# the second run is what tags the release and writes the GitHub release.
+#
+# That release is where this workflow stops. `publish.yml` takes the tag from
+# there, on the release event this one causes.
+#
+# One secret, set in the repository settings: `RELEASE_PLEASE`, a personal
+# access token allowed to write contents and pull requests. The default
+# `GITHUB_TOKEN` does the same work, except that a push or a release made with
+# it starts no further workflow, which would leave the release pull request
+# with no checks on it and `publish.yml` waiting for an event that never comes.
+name: release-please
+
+on: workflow_dispatch
+
+permissions: {}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE }}
+

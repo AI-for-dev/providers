@@ -1,10 +1,12 @@
+// The compat entry point: Pi maps the package root to it as well, and it is the one
+// that exports openAICompletionsApi when the tests run under plain Node.
 import {
 	createProvider,
 	envApiKeyAuth,
 	type Model,
 	openAICompletionsApi,
 	type RefreshModelsContext,
-} from "@earendil-works/pi-ai";
+} from "@earendil-works/pi-ai/compat";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 type ChatModel = Model<"openai-completions">;

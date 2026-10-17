@@ -1,12 +1,25 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "allowImportingTsExtensions": true
-  },
-  "include": ["extensions"]
+	"compilerOptions": {
+		"target": "esnext",
+		"lib": ["esnext"],
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
+
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+		"noFallthroughCasesInSwitch": true,
+		"verbatimModuleSyntax": true,
+
+		// Node runs TypeScript natively: it erases types, it does not compile
+		// them. `erasableSyntaxOnly` therefore forbids enum, namespace and
+		// parameter properties, which would require a real build step.
+		"allowImportingTsExtensions": true,
+		"erasableSyntaxOnly": true,
+		"noEmit": true,
+
+		"skipLibCheck": true,
+		"types": ["node"]
+	},
+	"include": ["extensions/**/*.ts", "test/**/*.ts"]
 }

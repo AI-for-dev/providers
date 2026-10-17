@@ -1,0 +1,60 @@
+# Publishing stands on its own so that it can be run again. A release that was
+# tagged but whose publish failed is not a release anybody can install, and
+# repeating it should not require a release to create: `release: published`
+# fires this workflow when Release Please writes the release, and
+# `workflow_dispatch` takes the tag when that has to be done a second time.
+#
+# The release event fires because Release Please acts with `RELEASE_PLEASE`
+# rather than with the default `GITHUB_TOKEN`, whose writes deliberately start
+# no workflow.
+#
+# There is no npm token. Trusted publishing authenticates this workflow by the
+# OIDC identity GitHub gives it, which npm matches against the repository and
+# the file name declared on the package page, and the provenance attestation
+# comes with it.
+#
+# The publish is **staged, not direct**. npm asks for proof of presence on a
+# write to this package, and a workflow has no second factor to offer, so this
+# run uploads the tarball and stops there. What puts the version on npm is
+# `npm stage list` and then `npm stage approve <id>`, run from a machine that
+# can answer for a person. Nothing is installable until somebody does.
+name: publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag to publish, such as v0.1.0"
+        required: true
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.event.release.tag_name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+
+      # The tag is what people will install, so it passes the same checks a
+      # pull request does before it goes out.
+      - run: npm run typecheck
+      - run: npm test
+
+      # Trusted publishing needs a newer npm than the one the runner's Node
+      # carries, and the runner's version moves on its own.
+      - run: npm install -g npm@^11.5.1
+      - run: npm stage publish
