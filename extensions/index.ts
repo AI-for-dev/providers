@@ -36,7 +36,7 @@ interface ModelTuning {
 	hidden?: boolean;
 }
 
-interface Endpoint {
+export interface Endpoint {
 	id: string;
 	name: string;
 	baseUrl: string;
@@ -44,7 +44,7 @@ interface Endpoint {
 	models: Record<string, ModelTuning>;
 }
 
-const ENDPOINTS: Endpoint[] = [
+export const ENDPOINTS: Endpoint[] = [
 	{
 		id: "ia4dev-ilaas",
 		name: "ILAAS",
@@ -70,10 +70,10 @@ const ENDPOINTS: Endpoint[] = [
 		envVar: "IA4DEV_API_KEY",
 		models: {
 			// The chat template accepts low, medium and xhigh (its default).
-			"qwen-3.8-27b": { vision: true, thinking: { low: "low", medium: "medium", high: "xhigh" } },
+			"qwen-3.8-27b": { contextWindow: 262_144, vision: true, thinking: { low: "low", medium: "medium", high: "xhigh" } },
 			// The deployed chat template accepts low, high (its default) and max, but not medium.
-			"ARES/DeepSeek-V4.1-Flash": { vision: true, thinking: { low: "low", medium: "high", high: "max" } },
-			"gemma-4-31b": { vision: true, thinking: "toggle" },
+			"ARES/DeepSeek-V4.1-Flash": { contextWindow: 1_048_576, vision: true, thinking: { low: "low", medium: "high", high: "max" } },
+			"gemma-4-31b": { contextWindow: 159_488, vision: true, thinking: "toggle" },
 		},
 	},
 ];
@@ -121,7 +121,7 @@ interface RemoteModel {
 	max_output_tokens?: number;
 }
 
-function toModel(endpoint: Endpoint, remote: RemoteModel): ChatModel {
+export function toModel(endpoint: Endpoint, remote: RemoteModel): ChatModel {
 	const tuning = endpoint.models[remote.id] ?? {};
 	const reasoning = reasoningFor(tuning.thinking ?? "none");
 	const contextWindow =
@@ -169,11 +169,47 @@ async function fetchModels(endpoint: Endpoint, context: RefreshModelsContext): P
 		.map((m) => toModel(endpoint, m));
 }
 
+// <ID>_BASE_URL (ex: IA4DEV_ILAAS_BASE_URL) remplace l'URL par défaut, pour tester ou changer de serveur.
+function withBaseUrl(base: Endpoint): Endpoint {
+	const urlVar = `${base.id.toUpperCase().replaceAll("-", "_")}_BASE_URL`;
+	return { ...base, baseUrl: process.env[urlVar] ?? base.baseUrl };
+}
+
+/**
+ * The same providers as a pi models.json, for tools that read that file but load no
+ * extension, such as trysquare. Built from the table alone: no server is asked, so a
+ * given version of this package always writes the same file. The key stays a `$VAR`
+ * reference that pi resolves from the environment.
+ */
+export function modelsJson(endpoints: Endpoint[] = ENDPOINTS) {
+	const providers: Record<string, unknown> = {};
+	for (const base of endpoints) {
+		const endpoint = withBaseUrl(base);
+		const models = Object.entries(endpoint.models)
+			.filter(([, tuning]) => !tuning.hidden)
+			.map(([id, tuning]) => {
+				// Without a server to ask, the default would pass for a measured value.
+				if (tuning.contextWindow === undefined) {
+					throw new Error(`${endpoint.name}: ${id} has no contextWindow in the table`);
+				}
+				// The provider entry already says these three.
+				const { provider, api, baseUrl, ...model } = toModel(endpoint, { id });
+				return model;
+			});
+		providers[endpoint.id] = {
+			name: endpoint.name,
+			baseUrl: endpoint.baseUrl,
+			api: "openai-completions",
+			apiKey: `$${endpoint.envVar}`,
+			models,
+		};
+	}
+	return { providers };
+}
+
 export default function (pi: ExtensionAPI) {
 	for (const base of ENDPOINTS) {
-		// <ID>_BASE_URL (ex: IA4DEV_ILAAS_BASE_URL) remplace l'URL par défaut, pour tester ou changer de serveur.
-		const urlVar = `${base.id.toUpperCase().replaceAll("-", "_")}_BASE_URL`;
-		const endpoint = { ...base, baseUrl: process.env[urlVar] ?? base.baseUrl };
+		const endpoint = withBaseUrl(base);
 		pi.registerProvider(
 			createProvider<"openai-completions">({
 				id: endpoint.id,

@@ -40,6 +40,17 @@ Seuls `qwen-3.8-27b` et `ARES/DeepSeek-V4.1-Flash` lisent un niveau d'effort dan
 
 Un modèle marqué `hidden: true` n'apparaît pas, même si le serveur le liste. Un modèle qui n'est pas dans la table reste utilisable. Il prend la taille de contexte donnée par le serveur (128 000 tokens à défaut), 32 768 tokens de sortie, sans images ni raisonnement.
 
+## Exporter un `models.json`
+
+Certains outils lisent un `models.json` mais ne chargent pas d'extension. C'est le cas de trysquare, qui lance pi sans extension et relaie la clé lui-même. Pour eux, le paquet écrit ses deux fournisseurs au format de `~/.pi/agent/models.json` :
+
+```bash
+npm ci
+npm run export-models -- chemin/vers/models.json   # sans chemin, le fichier sort sur stdout
+```
+
+L'export lit seulement la table de `extensions/index.ts`, sans appeler les serveurs : une même version du paquet écrit toujours le même fichier. Les modèles marqués `hidden` sont exclus, et un modèle sans `contextWindow` dans la table fait échouer l'export. Les clés restent des références (`$ILAAS_API_KEY`, `$IA4DEV_API_KEY`) que pi lit dans l'environnement. `IA4DEV_ILAAS_BASE_URL` et `IA4DEV_GRICAD_BASE_URL` changent l'URL écrite, comme pour l'extension.
+
 ## Limites
 
 - Un fournisseur déjà défini sous le même nom dans `~/.pi/agent/models.json` prend le dessus sur celui du paquet.
