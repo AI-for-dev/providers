@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/AI-for-dev/providers/compare/v0.4.0...v0.4.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* change IA4DEV provider name to GRICAD ([#9](https://github.com/AI-for-dev/providers/issues/9)) ([284114d](https://github.com/AI-for-dev/providers/commit/284114d64bbb24bceb4e695aeb10c52e728b3de0))
+
 ## [0.4.0](https://github.com/AI-for-dev/providers/compare/v0.3.0...v0.4.0) (2026-10-17)
 
 
