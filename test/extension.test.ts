@@ -42,7 +42,7 @@ beforeEach(() => {
 afterEach(() => {
 	globalThis.fetch = realFetch;
 	delete process.env.ILAAS_API_KEY;
-	delete process.env.IA4DEV_API_KEY;
+	delete process.env.GRICAD_API_KEY;
 	delete process.env.IA4DEV_ILAAS_BASE_URL;
 });
 
@@ -125,7 +125,7 @@ describe("authentication", () => {
 	it("falls back to the server's environment variable", async () => {
 		const auth = provider("ia4dev-gricad").auth.apiKey;
 		const result = await auth?.resolve({
-			ctx: { env: async (name) => (name === "IA4DEV_API_KEY" ? "sk-env" : undefined), fileExists: async () => false },
+			ctx: { env: async (name) => (name === "GRICAD_API_KEY" ? "sk-env" : undefined), fileExists: async () => false },
 			signal: new AbortController().signal,
 		});
 		assert.equal(result?.auth.apiKey, "sk-env");

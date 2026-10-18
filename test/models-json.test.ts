@@ -36,7 +36,7 @@ describe("models.json export", () => {
 			Object.entries(exported()).map(([id, p]) => [id, p.baseUrl, p.apiKey]),
 			[
 				["ia4dev-ilaas", "https://devllm.ilaas.fr/v1", "$ILAAS_API_KEY"],
-				["ia4dev-gricad", "https://ia4dev-owui.univ-grenoble-alpes.fr/api", "$IA4DEV_API_KEY"],
+				["ia4dev-gricad", "https://ia4dev-owui.univ-grenoble-alpes.fr/api", "$GRICAD_API_KEY"],
 			],
 		);
 	});

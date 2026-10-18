@@ -21,7 +21,7 @@ pi install npm:@ai-for-dev/providers
 
 La liste des modèles est lue sur le serveur (`GET /models`) avec votre clé. Elle se met à jour au démarrage, à l'ouverture de `/model` et après `/login`.
 
-Vous pouvez aussi fournir la clé par variable d'environnement : `ILAAS_API_KEY` ou `IA4DEV_API_KEY`.
+Vous pouvez aussi fournir la clé par variable d'environnement : `ILAAS_API_KEY` ou `GRICAD_API_KEY`.
 
 ## Changer d'URL
 
@@ -49,7 +49,7 @@ npm ci
 npm run export-models -- chemin/vers/models.json   # sans chemin, le fichier sort sur stdout
 ```
 
-L'export lit seulement la table de `extensions/index.ts`, sans appeler les serveurs : une même version du paquet écrit toujours le même fichier. Les modèles marqués `hidden` sont exclus, et un modèle sans `contextWindow` dans la table fait échouer l'export. Les clés restent des références (`$ILAAS_API_KEY`, `$IA4DEV_API_KEY`) que pi lit dans l'environnement. `IA4DEV_ILAAS_BASE_URL` et `IA4DEV_GRICAD_BASE_URL` changent l'URL écrite, comme pour l'extension.
+L'export lit seulement la table de `extensions/index.ts`, sans appeler les serveurs : une même version du paquet écrit toujours le même fichier. Les modèles marqués `hidden` sont exclus, et un modèle sans `contextWindow` dans la table fait échouer l'export. Les clés restent des références (`$ILAAS_API_KEY`, `$GRICAD_API_KEY`) que pi lit dans l'environnement. `IA4DEV_ILAAS_BASE_URL` et `IA4DEV_GRICAD_BASE_URL` changent l'URL écrite, comme pour l'extension.
 
 ## Limites
 
