@@ -70,7 +70,7 @@ export const ENDPOINTS: Endpoint[] = [
 		id: "ia4dev-gricad",
 		name: "IA4Dev",
 		baseUrl: "https://ia4dev-owui.univ-grenoble-alpes.fr/api",
-		envVar: "IA4DEV_API_KEY",
+		envVar: "GRICAD_API_KEY",
 		models: {
 			// The chat template accepts low, medium and xhigh (its default).
 			"qwen-3.8-27b": { contextWindow: 262_144, vision: true, thinking: { low: "low", medium: "medium", high: "xhigh" } },
